@@ -3,10 +3,9 @@
   リンクしたプログラムオブジェクトのIDを返す関数
 */
 function GetWaveEffectProgram() {
-    // 頂点シェーダー (Three.jsが自動付与する uv や position を手動で定義)
-    const vertexShaderSource = `
-      attribute vec2 a_position;
-      varying vec2 vUv;
+    const vertexShaderSource = `#version 300 es
+      in vec2 a_position;
+      out vec2 vUv;
       void main() {
         // -1.0 ~ 1.0 の座標を 0.0 ~ 1.0 の UV座標に変換
         vUv = a_position * 0.5 + 0.5;
@@ -14,13 +13,14 @@ function GetWaveEffectProgram() {
       }
     `;
 
-    // フラグメントシェーダー (precisionを明示的に追加)
-    const fragmentShaderSource = `
+    const fragmentShaderSource = `#version 300 es
       precision mediump float;
       
       uniform float u_time;
       uniform vec2 u_resolution;
-      varying vec2 vUv;
+      in vec2 vUv;
+
+      out vec4 outColor; // gl_FragColorの代わりに出力変数を定義
 
       void main() {
         vec2 uv = vUv - 0.5;
@@ -55,18 +55,12 @@ function GetWaveEffectProgram() {
           finalColor += waveColor * intensity;
         }
 
-        gl_FragColor = vec4(finalColor, 1.0);
+        outColor = vec4(finalColor, 1.0); // 定義した変数に出力
       }
     `;
 
-    // 頂点シェーダーコンパイル
-    const vertexShaderId = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-
-    // フラグメントシェーダーコンパイル
-    const fragmentShaderId = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
-
-    // リンクしてGPUで動かせるプログラムオブジェクトの作成
-    const programId = createProgram(gl, vertexShaderId, fragmentShaderId);
+    const vertexShaderId = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);// 頂点シェーダーコンパイル
+    const fragmentShaderId = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);// フラグメントシェーダーコンパイル
+    const programId = createProgram(gl, vertexShaderId, fragmentShaderId);// リンクしてGPUで動かせるプログラムオブジェクトの作成
     return programId;
 }
-
